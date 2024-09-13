@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,12 +5,18 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from PIL import Image
 import torchvision.transforms as transforms
 import types
+import os
 import sys
-sys.path.insert(0,'ml-mobileclip/')
+sys.path.insert(0, 'ml-mobileclip/')
 import mobileclip
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 DTYPE = torch.float16
+
+# Download mobileclip_s2.pt if it doesn't exist locally
+if not os.path.exists('mobileclip_s2.pt'):
+    model_url = 'https://huggingface.co/irotem98/edge_vlm/resolve/main/mobileclip_s2.pt'
+    os.system(f"wget {model_url}")
 
 def split_chessboard(x, num_split):
     B, C, H, W = x.shape
@@ -79,6 +84,7 @@ class MoondreamModel(nn.Module):
             torch_dtype=DTYPE,
             device_map={"": DEVICE}
         )
+        self.load_state_dict(torch.load('moondream_model_state_dict.pt'))
 
     def forward(self, images, tokens):
         img_embs = self.vision_encoder(images)
@@ -86,3 +92,53 @@ class MoondreamModel(nn.Module):
         inputs_embeds = torch.cat((tok_embs[:, 0:1, :], img_embs, tok_embs[:, 1:, :]), dim=1)
         outputs = self.text_model(inputs_embeds=inputs_embeds)
         return outputs
+
+    @staticmethod
+    def load_model():
+        model = MoondreamModel().to(DEVICE).half()
+        return model
+
+    @staticmethod
+    def load_tokenizer():
+        tokenizer = AutoTokenizer.from_pretrained("h2oai/h2o-danube3-500m-chat", trust_remote_code=True)
+        return tokenizer
+
+    @staticmethod
+    def preprocess_image(image_path, img_size=512):
+        transform = transforms.Compose([
+            transforms.Resize((img_size, img_size)),
+            transforms.ToTensor(),
+            transforms.Lambda(lambda x: x.to(torch.float16)),
+        ])
+        image = Image.open(image_path).convert('RGB')
+        image = transform(image).to(DEVICE)
+        return image
+
+    @staticmethod
+    def generate_caption(model, image, tokenizer, max_length=128):
+        model.eval()
+        with torch.no_grad():
+            image = image.unsqueeze(0).to(DEVICE)
+            img_embs = model.vision_encoder(image)
+
+            generated = [tokenizer.bos_token_id]
+            descriptive_prompt = tokenizer(
+                f"\n\nDescriptions of the image:",
+                add_special_tokens=False
+            ).input_ids
+            generated.extend(descriptive_prompt)
+
+            for _ in range(max_length):
+                input_ids = torch.tensor(generated, dtype=torch.long, device=DEVICE).unsqueeze(0)
+                tok_embs = model.text_model.get_input_embeddings()(input_ids)
+                inputs_embeds = torch.cat((tok_embs[:, 0:1, :], img_embs, tok_embs[:, 1:, :]), dim=1)
+                outputs = model.text_model(inputs_embeds=inputs_embeds)
+                next_token_logits = outputs.logits[:, -1, :]
+                next_token = torch.argmax(next_token_logits, dim=-1).item()
+
+                if next_token == tokenizer.sep_token_id:
+                    break
+
+                generated.append(next_token)
+
+            return tokenizer.decode(generated, skip_special_tokens=True)
