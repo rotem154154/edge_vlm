@@ -39,7 +39,7 @@ class FeatureIRLayer(nn.Module):
 class MobileVision(nn.Module):
     def __init__(self):
         super(MobileVision, self).__init__()
-        self.vision, _, _ = mobileclip.create_model_and_transforms('mobileclip_s2', pretrained='/kaggle/working/test/edge_vlm/mobileclip_s2.pt')
+        self.vision, _, _ = mobileclip.create_model_and_transforms('mobileclip_s2', pretrained='mobileclip_s2.pt')
         self.vision = self.vision.image_encoder.model.eval().to(DEVICE).half()
 
         def new_forward(self, x: torch.Tensor) -> torch.Tensor:
