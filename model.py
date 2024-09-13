@@ -7,16 +7,10 @@ import torchvision.transforms as transforms
 import types
 import os
 import sys
-sys.path.insert(0, 'ml-mobileclip/')
 import mobileclip
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 DTYPE = torch.float16
-
-# Download mobileclip_s2.pt if it doesn't exist locally
-if not os.path.exists('mobileclip_s2.pt'):
-    model_url = 'https://huggingface.co/irotem98/edge_vlm/resolve/main/mobileclip_s2.pt'
-    os.system(f"wget {model_url}")
 
 def split_chessboard(x, num_split):
     B, C, H, W = x.shape
@@ -45,7 +39,7 @@ class FeatureIRLayer(nn.Module):
 class MobileVision(nn.Module):
     def __init__(self):
         super(MobileVision, self).__init__()
-        self.vision, _, _ = mobileclip.create_model_and_transforms('mobileclip_s2', pretrained='mobileclip_s2.pt')
+        self.vision, _, _ = mobileclip.create_model_and_transforms('mobileclip_s2', pretrained='/kaggle/working/test/edge_vlm/mobileclip_s2.pt')
         self.vision = self.vision.image_encoder.model.eval().to(DEVICE).half()
 
         def new_forward(self, x: torch.Tensor) -> torch.Tensor:
