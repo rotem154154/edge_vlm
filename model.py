@@ -101,15 +101,16 @@ class MoondreamModel(nn.Module):
         return tokenizer
 
     @staticmethod
-    def preprocess_image(image_path, img_size=512):
+    def preprocess_image(image, img_size=512):
         transform = transforms.Compose([
             transforms.Resize((img_size, img_size)),
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x.to(DTYPE)),
         ])
-        image = Image.open(image_path).convert('RGB')
+        # The `image` is now a PIL image, so no need to load it from the file path
         image = transform(image).to(DEVICE)
         return image
+
 
     @staticmethod
     def generate_caption(model, image, tokenizer, max_length=128):
