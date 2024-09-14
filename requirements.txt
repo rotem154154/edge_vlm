@@ -1,2 +1,13 @@
+torch
+transformers
 timm
+einops
+datasets
+bitsandbytes
+accelerate
+peft
 open_clip_torch
+lovely_tensors
+lion-pytorch
+pytorch_optimizer
+onnxsim
