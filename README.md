@@ -1,6 +1,11 @@
+---
+license: apache-2.0
+---
 # Edge Vision-Language Model (Moondream)
 
 This repository contains the `Moondream` vision-language model, designed to generate captions for images. It utilizes a lightweight, experimental vision encoder and a language model for generating descriptions of input images.
+
+[![Hugging Face Spaces](https://img.shields.io/badge/Hugging%20Face-Spaces-orange)](https://huggingface.co/spaces/irotem98/edge_vlm)
 
 ## Installation
 
@@ -36,8 +41,3 @@ image = MoondreamModel.preprocess_image(image_path)
 # Generate the caption
 caption = MoondreamModel.generate_caption(model, image, tokenizer)
 print('Generated Caption:', caption)
-```
-
-## Disclaimer
-
-Please note that this model is **small and experimental**. It was created for testing and exploration purposes rather than for achieving state-of-the-art performance. While it can generate image captions, its capabilities are limited compared to larger, more advanced models. We encourage you to explore and experiment, but keep in mind that the results may not match those of high-end, production-ready models.
