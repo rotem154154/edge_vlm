@@ -6,11 +6,11 @@ from PIL import Image
 import torchvision.transforms as transforms
 import types
 import os
-import sys
 import mobileclip
 
+# Set the device to GPU if available, otherwise use CPU
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-DTYPE = torch.float16
+DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32
 
 def split_chessboard(x, num_split):
     B, C, H, W = x.shape
@@ -40,7 +40,7 @@ class MobileVision(nn.Module):
     def __init__(self):
         super(MobileVision, self).__init__()
         self.vision, _, _ = mobileclip.create_model_and_transforms('mobileclip_s2', pretrained='mobileclip_s2.pt')
-        self.vision = self.vision.image_encoder.model.eval().to(DEVICE).half()
+        self.vision = self.vision.image_encoder.model.eval().to(DEVICE).to(DTYPE)
 
         def new_forward(self, x: torch.Tensor) -> torch.Tensor:
             x = self.forward_embeddings(x)
@@ -48,8 +48,8 @@ class MobileVision(nn.Module):
             return self.conv_exp(x)
         self.vision.forward = types.MethodType(new_forward, self.vision)
 
-        self.projection = FeatureIRLayer(1280*2, 4096, 1536).to(DEVICE).half()
-        self.projection2 = nn.Linear(4096, 1536).to(DEVICE).half()
+        self.projection = FeatureIRLayer(1280*2, 4096, 1536).to(DEVICE).to(DTYPE)
+        self.projection2 = nn.Linear(4096, 1536).to(DEVICE).to(DTYPE)
 
     def forward(self, x):
         with torch.no_grad():
@@ -78,7 +78,7 @@ class MoondreamModel(nn.Module):
             torch_dtype=DTYPE,
             device_map={"": DEVICE}
         )
-        self.load_state_dict(torch.load('moondream_model_state_dict.pt'))
+        self.load_state_dict(torch.load('moondream_model_state_dict.pt', map_location=DEVICE))
 
     def forward(self, images, tokens):
         img_embs = self.vision_encoder(images)
@@ -89,7 +89,10 @@ class MoondreamModel(nn.Module):
 
     @staticmethod
     def load_model():
-        model = MoondreamModel().to(DEVICE).half()
+        model = MoondreamModel().to(DEVICE)
+        # Only apply half() if using a GPU
+        if torch.cuda.is_available():
+            model = model.half()
         return model
 
     @staticmethod
@@ -102,7 +105,7 @@ class MoondreamModel(nn.Module):
         transform = transforms.Compose([
             transforms.Resize((img_size, img_size)),
             transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.to(torch.float16)),
+            transforms.Lambda(lambda x: x.to(DTYPE)),
         ])
         image = Image.open(image_path).convert('RGB')
         image = transform(image).to(DEVICE)
