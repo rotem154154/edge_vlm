@@ -1,7 +1,3 @@
----
-license: apache-2.0
----
-
 # Edge Vision-Language Model (Moondream)
 
 This repository contains the `Moondream` vision-language model, designed to generate captions for images. It utilizes a lightweight, experimental vision encoder and a language model for generating descriptions of input images.
