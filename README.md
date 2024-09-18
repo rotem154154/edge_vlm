@@ -6,6 +6,7 @@ license: apache-2.0
 
 This repository contains the `Moondream` vision-language model, designed to generate captions for images. It utilizes a lightweight, experimental vision encoder and a language model for generating descriptions of input images.
 
+[![Website](https://img.shields.io/badge/Website-Visit%20Site-blue)](https://rotem154154.github.io/)
 [![Hugging Face Model](https://img.shields.io/badge/Hugging%20Face-Model-blue)](https://huggingface.co/irotem98/edge_vlm)
 [![Hugging Face Spaces](https://img.shields.io/badge/Hugging%20Face-Spaces-orange)](https://huggingface.co/spaces/irotem98/edge_vlm)
 
